@@ -46,9 +46,14 @@ def EC2(region):
 	ec2_client=boto3.client('ec2',aws_access_key_id=access_key,aws_secret_access_key=secret_key,region_name=region)
 	return ec2_client
 
-def Create_Snapshot(volID,region):
+def Create_Snapshot(volID, region):
 	ec2=EC2(region)
 	response=ec2.create_snapshot(Description='Test by cli',VolumeId=volID,TagSpecifications=[{'ResourceType':'snapshot','Tags': [{'Key': 'name','Value': volID},{'Key': 'date','Value': today},]},],)
+	return response
+
+def Delete_Snapshot(snapID, region):
+	ec2=EC2(region)
+	response=ec2.delete_snapshot(SnapshotId=snapID)
 	return response
 
 def Waiter(snapshotid,region):
@@ -69,9 +74,17 @@ def Main():
 		except ClientError as e:
 			if (e.response['Error']['Code'])=='InvalidVolume.NotFound':
 				print("Error: Please check volume-id or try to specify region with --region argument")
-			
-		
-		 
+	if (args.service=='ec2' and args.snapshot and args.delete and args.region):
+		try:			
+			delete=args.delete
+			snapID=delete
+			region=args.region
+			Delete_Snapshot(snapID, region)
+		except ClientError as e:
+			if (e.response['Error']['Code'])=='InvalidSnapshot.NotFound':
+				print("Error: Invalid Snapshot ID or maybe you did not provide the right region")
+			if (e.response['Error']['Code'])=='InvalidSnapshotID.Malformed':
+				print("Error: You Provided Malformed Snapshot ID")
 
 if __name__ == '__main__':
         Main()
