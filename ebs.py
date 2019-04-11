@@ -39,7 +39,6 @@ def parse_args():
 	parser.add_argument('--region',dest='region',default=default_region,help=argparse.SUPPRESS,type=str)
 	parser.add_argument('--volume',dest='volume', help=argparse.SUPPRESS,type=str)
 	parser.add_argument('--ami',dest='ami',help=argparse.SUPPRESS,type=str)
-	parser.add_argument('--s3',dest='s3',help=argparse.SUPPRESS,type=str)
 	return parser.parse_args()
 
 def EC2(region):
