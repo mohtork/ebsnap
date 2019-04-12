@@ -11,13 +11,14 @@ AWSnap arguments:
 	--delete		# Delete Snapshot
 	--copy			# Copy snapshot between regions
 	--region		# Region name
+        --dest			# Destination region
 	--volume		# Volume ID
 	--ami			# AMI ID
 '''
 
 import boto3
 import argparse
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from datetime import datetime, timedelta
 
 import config as cf
@@ -37,8 +38,10 @@ def parse_args():
 	parser.add_argument('--delete',dest='delete',help=argparse.SUPPRESS,type=str)
 	parser.add_argument('--copy',dest='copy',help=argparse.SUPPRESS,type=str)
 	parser.add_argument('--region',dest='region',default=default_region,help=argparse.SUPPRESS,type=str)
+	parser.add_argument('--dest',dest='dest',help=argparse.SUPPRESS,type=str)
 	parser.add_argument('--volume',dest='volume', help=argparse.SUPPRESS,type=str)
 	parser.add_argument('--ami',dest='ami',help=argparse.SUPPRESS,type=str)
+	parser.add_argument('--s3',dest='s3',help=argparse.SUPPRESS,type=str)
 	return parser.parse_args()
 
 def EC2(region):
@@ -53,6 +56,11 @@ def Create_Snapshot(volID, region):
 def Delete_Snapshot(snapID, region):
 	ec2=EC2(region)
 	response=ec2.delete_snapshot(SnapshotId=snapID)
+	return response
+
+def Copy_Snapshot(snapID, region, dest):
+	ec2=EC2(region)
+	response=ec2.copy_snapshot(SourceSnapshotId=snapID,SourceRegion=dest,Description='copied snapshot')
 	return response
 
 def Waiter(snapshotid,region):
@@ -73,6 +81,9 @@ def Main():
 		except ClientError as e:
 			if (e.response['Error']['Code'])=='InvalidVolume.NotFound':
 				print("Error: Please check volume-id or try to specify region with --region argument")
+		except EndpointConnectionError as error:
+			print("Error: Worng region!")
+
 	if (args.service=='ec2' and args.snapshot and args.delete and args.region):
 		try:			
 			delete=args.delete
@@ -85,6 +96,18 @@ def Main():
 			if (e.response['Error']['Code'])=='InvalidSnapshotID.Malformed':
 				print("Error: You Provided Malformed Snapshot ID")
 
+	if (args.service=='ec2' and args.snapshot and args.copy and args.dest):
+		try:
+			snapID=args.copy
+			dest=args.region
+			region=args.dest		
+			Copy_Snapshot(snapID, region, dest)
+		except ClientError as e:
+			if (e.response['Error']['Code'])=='InvalidSnapshot.NotFound':
+				print("Error: Invalid Snapshot ID or maybe you did not provide the right region")
+			if (e.response['Error']['Code'])=='InvalidSnapshotID.Malformed':
+				print("Error: You Provided Malformed Snapshot ID")
+
 if __name__ == '__main__':
-        Main()
+	Main()
 
