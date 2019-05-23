@@ -3,7 +3,7 @@ Automate EBS Snapshots<br/>
 - Create ebs snapshot<br/>
 - Delete ebs snapshot<br/> 
 - Copy ebs snapshot across regions<br/>
-- Delete snapshots older than x days <br/>
+
 
 
 # Installation
